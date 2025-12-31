@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Goodbye 2025 | Hello 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;800&family=Dancing+Script:wght@700&family=Caveat:wght@400;600&display=swap');
+
+        body {
+            background: #e5e7eb;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            perspective: 1200px;
+            touch-action: manipulation;
+        }
+
+        .letter-paper::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('https://www.transparenttextures.com/patterns/paper-fibers.png');
+            opacity: 0.4;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .pencil-text { 
+            font-family: 'Caveat', cursive;
+            color: #4b4b4b;
+            filter: url(#pencilTexture);
+        }
+
+        .letter-paper {
+            width: 90vw;
+            max-width: 400px; /* Constrains size on big screens */
+            min-height: 550px; 
+            background: #fff;
+            background-image: 
+                linear-gradient(90deg, transparent 44px, #abced4 44px, #abced4 46px, transparent 46px),
+                linear-gradient(#eee 1px, transparent 1px);
+            background-size: 100% 100%, 100% 25px;
+            border-radius: 4px;
+            box-shadow: 10px 20px 50px rgba(0,0,0,0.15);
+            position: relative;
+            padding: 50px 25px 40px 65px; 
+            transform: rotate(-0.5deg);
+            margin: auto;
+        }
+
+        .signature-svg {
+            width: 140px;
+            height: 50px;
+            stroke: #e11d48;
+            stroke-width: 2;
+            fill: none;
+            stroke-dasharray: 500;
+            stroke-dashoffset: 500;
+            filter: url(#pencilTexture);
+        }
+
+        /* Responsive Desk Pencil */
+        .desk-pencil {
+            position: absolute;
+            width: 120px;
+            height: 8px;
+            background: linear-gradient(to bottom, #ffd700, #ffb900);
+            bottom: -30px;
+            left: 5%;
+            transform: rotate(5deg);
+            border-radius: 2px;
+            box-shadow: 2px 5px 10px rgba(0,0,0,0.1);
+        }
+
+        /* Responsive Polaroid */
+        .polaroid {
+            position: absolute;
+            top: -15px; 
+            right: -10px;
+            width: 90px; /* Fixed width for better control */
+            background: white;
+            padding: 8px 8px 20px 8px;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+            transform: rotate(8deg);
+            z-index: 60;
+        }
+
+        /* ADJUSTMENTS FOR BIG SCREENS */
+        @media (min-width: 1024px) {
+            .polaroid { width: 110px; top: -20px; right: -30px; }
+            .desk-pencil { width: 180px; left: -40px; }
+            .letter-paper { max-width: 420px; }
+        }
+
+        /* ADJUSTMENTS FOR SMALL SCREENS */
+        @media (max-width: 480px) {
+            .polaroid { width: 75px; top: -10px; right: -5px; }
+            .letter-paper { padding-left: 55px; padding-top: 40px; width: 92vw; }
+            .desk-pencil { width: 90px; bottom: -20px; }
+        }
+
+        #scratch-canvas { 
+            position: absolute; 
+            top: 0; left: 0; 
+            z-index: 50; 
+            cursor: crosshair; 
+            border-radius: 4px;
+            touch-action: none; 
+        }
+    </style>
+</head>
+<body>
+
+<svg style="display: none;">
+  <filter id="pencilTexture">
+    <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" result="noise" />
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2" />
+  </filter>
+</svg>
+
+<div id="step-name" class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-white/80 backdrop-blur-lg">
+    <div class="bg-white p-8 rounded-[2.5rem] shadow-2xl text-center max-w-xs w-full border border-rose-100">
+        <div class="text-4xl mb-4 animate-bounce">🎇</div>
+        <h2 class="text-xl font-black text-slate-800 mb-2 tracking-tighter uppercase">2026 Awaits</h2>
+        <input type="text" id="user-name" class="w-full bg-rose-50 rounded-xl py-3 px-4 text-center text-lg font-bold text-rose-600 outline-none mb-4" placeholder="Enter Name...">
+        <button onclick="startExperience()" class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold active:scale-95 transition-transform">Open Message ✨</button>
+    </div>
+</div>
+
+<div id="letter-scene" class="hidden flex flex-col items-center justify-center w-full min-h-screen p-4">
+    <div class="letter-paper" id="paper">
+        <div class="desk-pencil"></div>
+        <div class="polaroid">
+            <img src="https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=200" class="w-full h-auto object-cover grayscale-[0.2]">
+            <p class="pencil-text text-[10px] text-center mt-1">2026 Vibes</p>
+        </div>
+
+        <canvas id="scratch-canvas"></canvas>
+
+        <div class="flex flex-col h-full pointer-events-none z-10">
+            <p class="pencil-text text-xs font-bold uppercase tracking-widest mb-4">Jan 01, 2026</p>
+            <h1 class="pencil-text text-xl sm:text-2xl mb-3">Happy New Year, <span id="display-name" class="text-rose-600">Guest</span>!</h1>
+            <div class="pencil-text text-lg sm:text-xl space-y-3">
+                <p>As 2025 ends, I wanted to say thanks for being part of my year.</p>
+                <p>Welcome 2026—hope it brings you nothing but wins and laughter.</p>
+            </div>
+
+            <div class="mt-auto pt-6 pointer-events-auto">
+                <p class="pencil-text text-base sm:text-lg mb-4">Coffee catch-up soon?</p>
+                <div class="flex gap-3">
+                    <button onclick="handleYes()" class="px-5 py-2 bg-rose-500 text-white rounded-lg font-bold shadow-lg active:scale-90 transition-transform">YES! ☕</button>
+                    <button id="no-btn" class="px-5 py-2 bg-slate-100 text-slate-400 rounded-lg font-bold uppercase text-sm">Nah</button>
+                </div>
+            </div>
+
+            <div class="mt-6">
+                <p class="pencil-text text-sm italic">Warmly,</p>
+                <svg class="signature-svg" id="sig-path" viewBox="0 0 200 60">
+                    <text x="10" y="45" font-family="Dancing Script" font-size="35" fill="#e11d48">Mahesh</text>
+                </svg>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+const canvas = document.getElementById('scratch-canvas');
+const ctx = canvas.getContext('2d');
+
+function playScratch() {
+    if (audioCtx.state === 'suspended') return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle';
+    gain.gain.setValueAtTime(0.005, audioCtx.currentTime);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+}
+
+function startExperience() {
+    const name = document.getElementById('user-name').value.trim();
+    if (!name) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    document.getElementById('display-name').innerText = name;
+    
+    gsap.to("#step-name", { opacity: 0, duration: 0.5, onComplete: () => {
+        document.getElementById('step-name').classList.add('hidden');
+        document.getElementById('letter-scene').classList.remove('hidden');
+        initScratch();
+        gsap.fromTo("#paper", { scale: 0.8, opacity: 0, rotation: -5 }, { scale: 1, opacity: 1, rotation: -0.5, duration: 1, ease: "back.out(1.7)" });
+    }});
+}
+
+function initScratch() {
+    const paper = document.getElementById('paper');
+    canvas.width = paper.offsetWidth;
+    canvas.height = paper.offsetHeight;
+    
+    const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    grad.addColorStop(0, '#fed7aa');
+    grad.addColorStop(1, '#ffedd5');
+    ctx.fillStyle = grad; 
+    ctx.fillRect(0,0, canvas.width, canvas.height);
+    
+    ctx.font = "bold 16px 'Plus Jakarta Sans'";
+    ctx.fillStyle = "#e11d48";
+    ctx.textAlign = "center";
+    ctx.fillText("SCRATCH FOR 2026", canvas.width/2, canvas.height/2);
+}
+
+function handleScratch(e) {
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath();
+    ctx.arc(x, y, 35, 0, Math.PI * 2);
+    ctx.fill();
+    
+    playScratch();
+    
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let transparent = 0;
+    for (let i = 3; i < imageData.data.length; i += 80) { 
+        if (imageData.data[i] === 0) transparent++;
+    }
+    
+    if (transparent > (imageData.data.length / 80) * 0.35) { 
+        gsap.to(canvas, { opacity: 0, duration: 0.8, onComplete: () => {
+            canvas.remove();
+            gsap.to(".signature-svg", { strokeDashoffset: 0, duration: 2 });
+        }});
+    }
+}
+
+canvas.addEventListener('mousemove', (e) => { if(e.buttons > 0) handleScratch(e) });
+canvas.addEventListener('mousedown', handleScratch);
+canvas.addEventListener('touchmove', handleScratch);
+canvas.addEventListener('touchstart', handleScratch);
+
+const noBtn = document.getElementById('no-btn');
+const moveNo = () => {
+    gsap.to(noBtn, { 
+        x: Math.random() * 60 - 30, 
+        y: Math.random() * 60 - 30, 
+        duration: 0.3 
+    });
+};
+noBtn.addEventListener('mouseover', moveNo);
+noBtn.addEventListener('touchstart', (e) => { e.preventDefault(); moveNo(); });
+
+function handleYes() {
+    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+    setTimeout(() => {
+        window.location.href = `https://wa.me/8770726065?text=${encodeURIComponent("yooo mahesh! let's go on a coffee in 2026, no cap!")}`;
+    }, 600);
+}
+
+window.addEventListener('resize', () => {
+    if(document.body.contains(canvas)) initScratch();
+});
+</script>
+</body>
+</html>
